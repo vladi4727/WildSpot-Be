@@ -22,82 +22,90 @@ model styles {
 }
 
 model users {
-  userId        Int       @id @default(autoincrement())
-  email         String    @unique @db.VarChar(255)
-  password      String    @db.VarChar(255)
-  firstName     String    @db.VarChar(100)
-  lastName      String    @db.VarChar(100)
-  birthDate     DateTime  @db.Date
-  phoneNumber   String?   @db.VarChar(30)
-  role          String    @default("user")
+  userId      Int      @id @default(autoincrement())
+  email       String   @unique @db.VarChar(255)
+  password    String   @db.VarChar(255)
+  firstName   String   @db.VarChar(100)
+  lastName    String   @db.VarChar(100)
+  birthDate   DateTime @db.Date
+  phoneNumber String?  @db.VarChar(30)
+  role        String   @default("user")
 
-  campingSpots  campingSpots[]
-  bookings      bookings[]
-  reviews       reviews[]
+  campingSpots campingSpots[] @relation("OwnerSpots")
+  bookings     bookings[]     @relation("UserBookings")
+  reviews      reviews[]
 }
 
 model campingSpots {
-  spotId         Int              @id @default(autoincrement())
-  userId         Int
-  cityId         Int?
-  description    String?          @db.Text
-  streetAddress  String?          @db.VarChar(255)
-  instagramLink  String?          @db.VarChar(255)
-  portfolioLink  String?          @db.VarChar(255)
-  imageURL       String?          @db.VarChar(255)
-  createdAt      DateTime?        @default(now()) @db.DateTime(0)
+  spotId        Int       @id @default(autoincrement())
+  userId        Int
+  cityId        Int?
+  description   String?   @db.Text
+  streetAddress String?   @db.VarChar(255)
+  instagramLink String?   @db.VarChar(255)
+  portfolioLink String?   @db.VarChar(255)
+  imageURL      String?   @db.VarChar(255)
+  createdAt     DateTime? @default(now()) @db.DateTime(0)
 
-  users          users            @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
-  cities         cities?          @relation(fields: [cityId], references: [cityId], onDelete: NoAction, onUpdate: NoAction)
+  owner          users            @relation("OwnerSpots", fields: [userId], references: [userId])
+  city           cities?          @relation(fields: [cityId], references: [cityId])
   spotstyles     spotstyles[]
   availabilities availabilities[]
-  bookings       bookings[]       // ✅ Added this so campingSpots <-> bookings relation is complete
+  bookings       bookings[]       @relation("SpotBookings")
 }
 
 model spotstyles {
-  id            Int           @id @default(autoincrement())
-  spotId        Int
-  styleId       Int
+  id      Int @id @default(autoincrement())
+  spotId  Int
+  styleId Int
 
-  campingSpots  campingSpots  @relation(fields: [spotId], references: [spotId])
-  styles        styles        @relation(fields: [styleId], references: [styleId])
+  campingSpot campingSpots @relation(fields: [spotId], references: [spotId])
+  style       styles       @relation(fields: [styleId], references: [styleId])
 
   @@index([spotId])
   @@index([styleId])
 }
 
 model availabilities {
-  id           Int           @id @default(autoincrement())
-  spotId       Int
-  dateFrom     DateTime
-  dateTo       DateTime
-  isBooked     Boolean       @default(false)
+  id       Int      @id @default(autoincrement())
+  spotId   Int
+  dateFrom DateTime
+  dateTo   DateTime
+  isBooked Boolean  @default(false)
 
-  campingSpots campingSpots  @relation(fields: [spotId], references: [spotId], onDelete: Cascade)
+  spot campingSpots @relation(fields: [spotId], references: [spotId], onDelete: Cascade)
 
   @@index([spotId])
 }
 
 model bookings {
-  bookingId     Int           @id @default(autoincrement())
-  userId        Int
-  spotId        Int
+  bookingId        Int      @id @default(autoincrement())
+  userId           Int
+  spotId           Int
+  startDate        DateTime
+  endDate          DateTime
+  referenceURL     String?
+  comment          String?
+  isColor          Boolean  @default(false)
+  price            Float?
+  commissionAmount Float?
+  createdAt        DateTime @default(now())
 
-  users         users         @relation(fields: [userId], references: [userId])
-  campingSpots  campingSpots  @relation(fields: [spotId], references: [spotId])
-  reviews       reviews[]
+  user    users        @relation("UserBookings", fields: [userId], references: [userId])
+  spot    campingSpots @relation("SpotBookings", fields: [spotId], references: [spotId])
+  reviews reviews[]
 }
 
 model reviews {
-  reviewId      Int       @id @default(autoincrement())
-  userId        Int
-  bookingId     Int
-  createdAt     DateTime? @default(now())
-  rating        Int?
-  comment       String?
+  reviewId  Int       @id @default(autoincrement())
+  userId    Int
+  bookingId Int
+  createdAt DateTime? @default(now())
+  rating    Int?
+  comment   String?
 
-  users         users      @relation(fields: [userId], references: [userId])
-  bookings      bookings   @relation(fields: [bookingId], references: [bookingId])
+  user    users    @relation(fields: [userId], references: [userId])
+  booking bookings @relation(fields: [bookingId], references: [bookingId])
 
   @@index([bookingId])
 }
